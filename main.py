@@ -2,6 +2,9 @@
 
 import tkinter as tk
 from tkinter import EW, NSEW, ttk
+from tkinter import filedialog
+from PIL import ImageFile, Image, ImageTk
+
 class AreaBetweenCurvesInterface:
     def __init__(self, root: tk.Tk):
         self.root: tk.Tk = root
@@ -27,7 +30,7 @@ class AreaBetweenCurvesInterface:
         self.control_pane.grid(column=0, row=0, sticky=NSEW)
 
         # Imagen
-        self.add_image_button: ttk.Button = ttk.Button(self.control_pane, text="Add Image")
+        self.add_image_button: ttk.Button = ttk.Button(self.control_pane, text="Add Image", command=self.load_image)
         self.add_image_button.grid(column=0, row=0, sticky=EW)
 
         # Intervalos
@@ -107,6 +110,32 @@ class AreaBetweenCurvesInterface:
         self.canvas: tk.Canvas = tk.Canvas(self.canvas_frame, background='white')
         self.canvas.grid(column=0, row=0, sticky=NSEW)
     pass
+
+    def load_image(self):
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            # TODO: Manejar Error
+            self.image_pil = Image.open(file_path)
+            self.image_tk = ImageTk.PhotoImage(self.image_pil)
+            self.canvas.delete("all")
+
+            # self.puntos_f = []
+            # self.puntos_g = []
+            # self.puntos_ids = []
+
+            self.canvas.config(width=self.image_pil.width, height=self.image_pil.height)
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+            #
+            center_x = max(canvas_width, self.image_pil.width) / 2
+            center_y = max(canvas_height, self.image_pil.height) / 2
+
+            self.canvas.create_image(center_x, center_y, image=self.image_tk, anchor="center")
+
+
+            #Reposicionar el Label de modo también en relación al nuevo centro
+            # self.canvas.create_window(center_x, center_y - (image_pil.height/2) + 20,
+            #                          window=self.label_modo, anchor="n", tags="ui_label")
 
 
 root = tk.Tk()
