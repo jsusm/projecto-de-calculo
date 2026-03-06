@@ -7,7 +7,6 @@ from tkinter import filedialog
 from typing import Literal
 from PIL import Image, ImageTk
 from calculateArea import calculate_area
-import calculateArea
 
 type Mode = Literal[
         "selectA",
