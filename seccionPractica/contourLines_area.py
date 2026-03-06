@@ -2,22 +2,22 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 from scipy import integrate
 
-def build_splines(nodes):
+def build_splines(nodes: list[tuple[float, float]]):
     P = np.asarray(nodes, float)
     #Obligamos a ser una curva cerrada
     if not np.allclose(P[0], P[-1]):
-        P = np.vstack([P, P[0]])
+        P = np.vstack([P, P[0]])  # pyright: ignore[reportConstantRedefinition]
 
     #Ignoramos cuando otro nodo no esta distante de otro
     d = np.diff(P, axis=0)
     keep = np.r_[True, np.hypot(d[:,0], d[:,1]) > 0]
-    P = P[keep]
+    P = P[keep]  # pyright: ignore[reportConstantRedefinition]
 
     # Parametrizamos calculando las distancias acumuladas
     d = np.diff(P, axis=0)
     seg = np.hypot(d[:,0], d[:,1])
     S = np.r_[0.0, np.cumsum(seg)]
-    t = S / S[-1]
+    t: list[float] = S / S[-1]
 
     Sx = CubicSpline(t, P[:,0], bc_type='periodic')
     Sy = CubicSpline(t, P[:,1], bc_type='periodic')
@@ -31,7 +31,7 @@ def area_green(Sx, Sy):
 
 def calculateArea(nodes):
     Sx, Sy, t = build_splines(nodes)
-    return area_green(Sx, Sy)    
+    return area_green(Sx, Sy)
 
 #Callee
 def areaBetween(nodes_f, nodes_g):

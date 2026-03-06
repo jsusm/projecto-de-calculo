@@ -6,6 +6,8 @@ from typing import Literal
 
 from PIL import Image, ImageTk
 
+from contourLines_area import areaBetween, build_splines
+
 type Mode = Literal[
         "selectFInterpolators",
         "selectGInterpolators",
@@ -16,8 +18,8 @@ class ContourLinesInterface:
     def __init__(self, root: tk.Tk):
         self.root: tk.Tk = root
 
-        self.f_interpolators: list[tuple[int, int]] = []
-        self.g_interpolators: list[tuple[int, int]] = []
+        self.f_interpolators: list[tuple[float, float]] = []
+        self.g_interpolators: list[tuple[float, float]] = []
 
         self.mode: Mode = "None"
 
@@ -61,19 +63,21 @@ class ContourLinesInterface:
         self.select_g_nodes_button.grid(column=0, row=3, sticky=EW, pady=4)
 
         # Botton para generar funcion
-        self.generate_function_button: ttk.Button = ttk.Button(self.control_pane, text="Generar funcion")
+        self.generate_function_button: ttk.Button = ttk.Button(self.control_pane, text="Generar funcion", command=self.show_function)
         self.generate_function_button.grid(column=0, row=4, sticky=EW, pady=4)
 
         # boton para ocultar imagen
         self.hide_image_button: ttk.Button = ttk.Button(self.control_pane, text="Ocultar Imagen")
         self.hide_image_button.grid(column=0, row=5, sticky=EW, pady=4)
+        self.hide_image_button.bind("<ButtonPress-1>", lambda _: self.hide_image())
+        self.hide_image_button.bind("<ButtonRelease-1>", lambda _: self.show_image())
 
         # boton para recetear nodos
-        self.clear_nodes_button: ttk.Button = ttk.Button(self.control_pane, text="Limpiar Nodos")
+        self.clear_nodes_button: ttk.Button = ttk.Button(self.control_pane, text="Limpiar Nodos", command=self.reset_interpolators)
         self.clear_nodes_button.grid(column=0, row=6, sticky=EW, pady=4)
 
         # Botton Calcular Area
-        self.calculateAreaButton: ttk.Button = ttk.Button(self.control_pane, text="Calcular Area")
+        self.calculateAreaButton: ttk.Button = ttk.Button(self.control_pane, text="Calcular Area", command=self.calculate_area)
         self.calculateAreaButton.grid(column=0, row=7, sticky=EW, pady=4)
         self.resultLabel:ttk.Label = ttk.Label(self.control_pane, text="Area: ")
         self.resultLabel.grid(column=0, row=8, sticky=EW, pady=4)
@@ -90,7 +94,16 @@ class ContourLinesInterface:
 
         self.canvas.bind("<Motion>", lambda e: self.mouse_move(e.x, e.y))
         self.canvas.bind("<Button-1>", lambda e: self.mouse_left_click(e.x, e.y))
-        self.canvas.bind("<Button-2>", lambda e: self.mouse_right_click(e.x, e.y))
+        self.canvas.bind("<Button-3>", lambda e: self.mouse_right_click(e.x, e.y))
+
+    def calculate_area(self):
+        area = areaBetween(self.f_interpolators, self.g_interpolators)
+        self.resultLabel.configure(text=f"Area: {area:.4f}")
+
+    def reset_interpolators(self):
+        self.canvas.delete("functions")
+        self.f_interpolators = []
+        self.g_interpolators = []
 
     def set_mode(self, mode: Mode):
         self.mode_indicator.configure(text=f"Mode: {mode}")
@@ -101,6 +114,7 @@ class ContourLinesInterface:
         self.mouse_y = y
 
     def mouse_left_click(self, x: int, y: int):
+        self.canvas.delete("function")
         if(self.mode=="selectFInterpolators"):
             self.f_interpolators.append((x, y))
             self.render_interpolators()
@@ -111,6 +125,7 @@ class ContourLinesInterface:
         self.render_interpolators()
 
     def mouse_right_click(self, x: int, y: int):
+        self.canvas.delete("function")
         if(self.mode=="selectFInterpolators"):
             self.f_interpolators.pop()
         if(self.mode=="selectGInterpolators"):
@@ -128,6 +143,37 @@ class ContourLinesInterface:
         self.canvas.delete("g_interpolators")
         for x, y in self.g_interpolators:
             self.canvas.create_oval(x-3, y-3, x+3, y+3, fill="green", tags=('g_interpolators'))
+
+    def draw_function(self, interpolators: list[tuple[float, float]], tag: str, color="blue"):
+        Sx, Sy, t = build_splines(interpolators)
+        prevx = 0
+        prevy = 0
+        x = Sx(0)
+        y = Sy(0)
+        detail = 100
+        for i in range(detail):
+            prevx = x
+            prevy = y
+            x = Sx((i+1)/detail)
+            y = Sy((i+1)/detail)
+            self.canvas.create_line(prevx, prevy, x, y, fill=color, width=2, tags=(tag, "function"))
+
+    def show_function(self):
+        self.canvas.delete("function")
+
+        if(len(self.f_interpolators) >= 3):
+            self.draw_function(self.f_interpolators, "function_f")
+
+        if(len(self.g_interpolators) >= 3):
+            self.draw_function(self.g_interpolators, "function_g", color="green")
+
+    def hide_image(self):
+        self.canvas.itemconfigure("image", state=tk.HIDDEN)
+
+
+    def show_image(self):
+        self.canvas.itemconfigure("image", state=tk.NORMAL)
+
 
     def load_image(self):
         file_path = filedialog.askopenfilename()
@@ -147,7 +193,7 @@ class ContourLinesInterface:
             center_x = max(canvas_width, self.image_pil.width) / 2
             center_y = max(canvas_height, self.image_pil.height) / 2
 
-            self.canvas.create_image(center_x, center_y, image=self.image_tk, anchor="center")
+            self.canvas.create_image(center_x, center_y, image=self.image_tk, anchor="center", tags=("image"))
     pass
 
 
