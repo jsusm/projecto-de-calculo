@@ -1,10 +1,13 @@
 # pyright: reportUnusedCallResult=false
 
+import math
 import tkinter as tk
 from tkinter import EW, NSEW, ttk
 from tkinter import filedialog
 from typing import Literal
 from PIL import Image, ImageTk
+from calculateArea import calculate_area
+import calculateArea
 
 type Mode = Literal[
         "selectA",
@@ -25,11 +28,11 @@ class AreaBetweenCurvesInterface:
 
         self.mode: Mode = "None"
 
-        ## Valores visuales de el intervalo con respecto a la imagen
-        self.a_position: float = 0
-        self.b_position: float = 0
-        self.c_position: float = 0
-        self.d_position: float = 0
+        ## Valores de los entry de los intervalos en numeros
+        self.a_value_number: float = 0
+        self.b_value_number: float = 0
+        self.c_value_number: float = 0
+        self.d_value_number: float = 0
 
         ## Valores de estado para la seleccion visual de los intervalos
         self.a_selected: float = 0
@@ -37,11 +40,11 @@ class AreaBetweenCurvesInterface:
         self.c_selected: float = 0
         self.d_selected: float = 0
 
-        ## Valores de los entry de los intervalos en numeros
-        self.a_value_number: float = 0
-        self.b_value_number: float = 0
-        self.c_value_number: float = 0
-        self.d_value_number: float = 0
+        ## Valores visuales de el intervalo con respecto a la imagen
+        self.a_position: float = 0
+        self.b_position: float = 0
+        self.c_position: float = 0
+        self.d_position: float = 0
 
         ## Subintervalos para F y G
         self.f_subintervals: list[tuple[int, int]] = []
@@ -153,7 +156,7 @@ class AreaBetweenCurvesInterface:
         self.gNodetool.grid(column=0, row=4, pady=2)
 
         # Botton Calcular Area
-        self.calculateAreaButton: ttk.Button = ttk.Button(self.control_pane, text="Calcular Area")
+        self.calculateAreaButton: ttk.Button = ttk.Button(self.control_pane, text="Calcular Area", command=self.calculate_area)
         self.calculateAreaButton.grid(column=0, row=5, sticky=EW)
         self.resultLabel:ttk.Label = ttk.Label(self.control_pane, text="Area: ")
         self.resultLabel.grid(column=0, row=6, sticky=EW)
@@ -174,6 +177,8 @@ class AreaBetweenCurvesInterface:
         self.canvas.bind("<Leave>", lambda _: self.mouse_leave())
         self.canvas.bind("<Button-1>", lambda e: self.mouse_left_click(e.x, e.y))
         self.canvas.bind("<Button-3>", lambda e: self.mouse_right_click(e.x, e.y))
+
+        # self.dev_setup()
     pass
 
     def create_subinterval_line(self, x:int, y:int, tag: str, dashed: bool = False, color: str = "blue"):
@@ -234,20 +239,20 @@ class AreaBetweenCurvesInterface:
             vertical_line = False
             if(self.mode == "selectA"):
                 self.a_selected = True
-                self.a_value_number = x
+                self.a_position = x
 
             if(self.mode == "selectB"):
                 self.b_selected = True
-                self.b_value_number = x
+                self.b_position = x
 
             if(self.mode == "selectC"):
                 self.c_selected = True
-                self.c_value_number = y
+                self.c_position = y
                 vertical_line = True
 
             if(self.mode == "selectD"):
                 self.d_selected = True
-                self.d_value_number = y
+                self.d_position = y
                 vertical_line = True
 
             linetag = f"{bounday}line"
@@ -390,6 +395,74 @@ class AreaBetweenCurvesInterface:
             center_y = max(canvas_height, self.image_pil.height) / 2
 
             self.canvas.create_image(center_x, center_y, image=self.image_tk, anchor="center")
+
+    def calculate_function_area(self, raw_interpolators: list[tuple[int, int]], raw_subintervals: list[tuple[int, int]]):
+        self.a_value_number = float(self.aValue.get())
+        self.b_value_number = float(self.bValue.get())
+        self.c_value_number = float(self.cValue.get())
+        self.d_value_number = float(self.dValue.get())
+
+        # Relativisamos los puntos dentro de los intervalos
+        # (x - a)/(a - b) * (A - B) + A
+        # donde x es el valor del punto
+        # a es el limite visual inferior del intervalo
+        # b es el limite visual superior del intervalo
+        # A es el limite real inferior
+        # B es el limite real superior
+
+        A = self.a_value_number
+        B = self.b_value_number
+        C = self.c_value_number
+        D = self.d_value_number
+
+        a = self.a_position
+        b = self.b_position
+        c = self.c_position
+        d = self.d_position
+
+        interpolators: list[tuple[float, float]] = []
+        # incluimos los puntos de interpolacion
+        for i in raw_interpolators:
+            print(i)
+            x = ((i[0] - a) / (b - a)) * (B - A) + A
+            y = ((i[1] - c) / (d - c)) * (D - C) + C
+            interpolators.append((x, y))
+
+        ## subintervalos en las cordendas transformadas
+        ## aniadimos a como frontera del primer intervalo
+        subintervals: list[float] = [A]
+        # incluimos los nodos de las fronteras de los subintervalos
+        for i in raw_subintervals:
+            x = ((i[0] - a) / (b - a)) * (B - A) + A
+            y = ((i[1] - c) / (d - c)) * (D - C) + C
+            interpolators.append((x, y))
+            subintervals.append(x)
+
+        # aniadimos B para completar el ultimo subintervalo
+        subintervals.append(B)
+
+        # sumamos las areas de los intervalos
+        area = 0
+        for i in range(len(subintervals) - 1):
+            subinterval_interpolators = [p for p in interpolators if p[0] >= subintervals[i] and p[0] <= subintervals[i+1]]
+            print("i:", subinterval_interpolators)
+
+            area += calculate_area(subinterval_interpolators, subintervals[i], subintervals[i+1])
+
+        return area
+
+
+    def calculate_area(self):
+        f_area = self.calculate_function_area(self.f_interpolators, self.f_subintervals)
+        print("f area: ", f_area)
+
+        g_area = self.calculate_function_area(self.g_interpolators, self.g_subintervals)
+        print("g area: ", g_area)
+
+        area_between_curves = math.fabs(f_area - g_area)
+        self.resultLabel.configure(text=f"Area: {area_between_curves:.8f}")
+
+
 
 root = tk.Tk()
 interface = AreaBetweenCurvesInterface(root)

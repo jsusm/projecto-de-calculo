@@ -1,9 +1,8 @@
 import math
 import numpy as np
-import scipy.integrate as integrate
 
 #Recibir parametros de la interfaz
-def calculate_area(interpolators: list[tuple[float, float]], a: int, b: int):
+def calculate_area(interpolators: list[tuple[float, float]], a: float, b: float):
     # Numero de interpolantes
     n = len(interpolators)
 
@@ -29,5 +28,3 @@ def calculate_area(interpolators: list[tuple[float, float]], a: int, b: int):
         area += w[i] * interpolators[i][1]  # pyright: ignore[reportAny]
 
     return area
-
-print(calculate_area([(0, 0), (1/3, 1/27), (1, 1)], 0, 1))
