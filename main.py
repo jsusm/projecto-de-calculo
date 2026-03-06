@@ -5,6 +5,7 @@ from tkinter import EW, NSEW, ttk
 from tkinter import filedialog
 from typing import Literal
 from PIL import Image, ImageTk
+from PyQt6.sip import delete
 
 type Mode = Literal[
         "selectA",
@@ -46,6 +47,10 @@ class AreaBetweenCurvesInterface:
         ## Subintervalos para F y G
         self.f_subintervals: list[tuple[int, int]] = []
         self.g_subintervals: list[tuple[int, int]] = []
+
+        ## Puntos de interpolacion
+        self.f_interpolators: list[tuple[int, int]] = []
+        self.g_interpolators: list[tuple[int, int]] = []
 
         self.mouse_x: int = 0
         self.mouse_y: int = 0
@@ -148,8 +153,7 @@ class AreaBetweenCurvesInterface:
         self.gNodetool: ttk.Button = ttk.Button(self.toolsFrame, text="Seleccionar nodos para g", command=lambda: self.setMode("selectGNodes"))
         self.gNodetool.grid(column=0, row=4, pady=2)
 
-        # Calcular Area
-
+        # Botton Calcular Area
         self.calculateAreaButton: ttk.Button = ttk.Button(self.control_pane, text="Calcular Area")
         self.calculateAreaButton.grid(column=0, row=5, sticky=EW)
         self.resultLabel:ttk.Label = ttk.Label(self.control_pane, text="Area: ")
@@ -198,6 +202,15 @@ class AreaBetweenCurvesInterface:
         self.canvas.delete("g_subintervals")
         for x, y in self.g_subintervals:
             self.create_subinterval_line(x, y,"g_subintervals",  True, color="green")
+
+    def render_interpolators(self):
+        self.canvas.delete("f_interpolators")
+        for x, y in self.f_interpolators:
+            self.canvas.create_oval(x-3, y-3, x+3, y+3, fill="blue", tags=('f_interpolators'))
+
+        self.canvas.delete("g_interpolators")
+        for x, y in self.g_interpolators:
+            self.canvas.create_oval(x-3, y-3, x+3, y+3, fill="green", tags=('g_interpolators'))
 
     def mouse_enter(self):
         self.mouse_in = True
@@ -263,6 +276,15 @@ class AreaBetweenCurvesInterface:
 
             self.canvas.delete("g_subinterval") # quitar la linea dibujada para seleccionar
             self.render_subintervals()
+
+        if(self.mode == "selectFNodes"):
+            self.f_interpolators.append((x, y))
+            self.render_interpolators()
+
+        if(self.mode == "selectGNodes"):
+            self.g_interpolators.append((x, y))
+            self.render_interpolators()
+
         pass
 
 
@@ -287,6 +309,18 @@ class AreaBetweenCurvesInterface:
                 self.g_subintervals.pop()
 
             self.render_subintervals()
+
+        if(self.mode == "selectFNodes"):
+            if(len(self.f_interpolators)):
+                self.f_interpolators.pop()
+
+            self.render_interpolators()
+
+        if(self.mode == "selectGNodes"):
+            if(len(self.g_interpolators)):
+                self.g_interpolators.pop()
+
+            self.render_interpolators()
         pass
 
     def render_state(self):
