@@ -1,11 +1,10 @@
 # pyright: reportUnusedCallResult=false
 
 import tkinter as tk
-from tkinter import EW, NSEW, StringVar, ttk
+from tkinter import EW, NSEW, ttk
 from tkinter import filedialog
-from turtle import mode
 from typing import Literal
-from PIL import ImageFile, Image, ImageTk
+from PIL import Image, ImageTk
 
 type Mode = Literal[
         "selectA",
