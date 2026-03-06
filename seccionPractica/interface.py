@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 from PIL import Image, ImageTk
+import calculateArea
 
 class ContourLinesInterface:
     def __init__(self, root):
