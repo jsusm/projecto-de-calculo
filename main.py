@@ -5,7 +5,6 @@ from tkinter import EW, NSEW, ttk
 from tkinter import filedialog
 from typing import Literal
 from PIL import Image, ImageTk
-from PyQt6.sip import delete
 
 type Mode = Literal[
         "selectA",
@@ -360,13 +359,20 @@ class AreaBetweenCurvesInterface:
             if(draw_line): self.canvas.delete(linetag)
 
         ###### Subintervalos ######
-        if(self.mode == "SubintervalF" and not len(self.f_subintervals) > 3):
+        if(self.mode == "SubintervalF" and not len(self.f_subintervals) > 3 and self.mouse_in):
             self.canvas.delete("f_subinterval")
             self.create_subinterval_line(self.mouse_x, self.mouse_y, "f_subinterval")
 
-        if(self.mode == "SubintervalG" and not len(self.g_subintervals) > 3):
+        if(self.mode == "SubintervalF" and not self.mouse_in):
+            self.canvas.delete("f_subinterval")
+
+
+        if(self.mode == "SubintervalG" and not len(self.g_subintervals) > 3 and self.mouse_in):
             self.canvas.delete("g_subinterval")
             self.create_subinterval_line(self.mouse_x, self.mouse_y, "g_subinterval", color="green")
+
+        if(self.mode == "SubintervalG" and not self.mouse_in):
+            self.canvas.delete("g_subinterval")
 
     def load_image(self):
         file_path = filedialog.askopenfilename()
@@ -376,10 +382,6 @@ class AreaBetweenCurvesInterface:
             self.image_tk = ImageTk.PhotoImage(self.image_pil)
             self.canvas.delete("all")
 
-            # self.puntos_f = []
-            # self.puntos_g = []
-            # self.puntos_ids = []
-
             self.canvas.config(width=self.image_pil.width, height=self.image_pil.height)
             canvas_width = self.canvas.winfo_width()
             canvas_height = self.canvas.winfo_height()
@@ -388,12 +390,6 @@ class AreaBetweenCurvesInterface:
             center_y = max(canvas_height, self.image_pil.height) / 2
 
             self.canvas.create_image(center_x, center_y, image=self.image_tk, anchor="center")
-
-
-            #Reposicionar el Label de modo también en relación al nuevo centro
-            # self.canvas.create_window(center_x, center_y - (image_pil.height/2) + 20,
-            #                          window=self.label_modo, anchor="n", tags="ui_label")
-
 
 root = tk.Tk()
 interface = AreaBetweenCurvesInterface(root)
