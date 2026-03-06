@@ -387,14 +387,36 @@ class AreaBetweenCurvesInterface:
             self.image_tk = ImageTk.PhotoImage(self.image_pil)
             self.canvas.delete("all")
 
-            self.canvas.config(width=self.image_pil.width, height=self.image_pil.height)
             canvas_width = self.canvas.winfo_width()
             canvas_height = self.canvas.winfo_height()
+
+            required_width = max(canvas_width, self.image_pil.width)
+            required_height = max(canvas_height, self.image_pil.height)
+            self.canvas.config(width=required_width, height=required_height)
             #
             center_x = max(canvas_width, self.image_pil.width) / 2
             center_y = max(canvas_height, self.image_pil.height) / 2
 
             self.canvas.create_image(center_x, center_y, image=self.image_tk, anchor="center")
+
+            self.a_selected = False
+            self.b_selected = False
+            self.c_selected = False
+            self.d_selected = False
+            self.aValue.set("")
+            self.bValue.set("")
+            self.cValue.set("")
+            self.dValue.set("")
+            self.f_subintervals = []
+            self.g_subintervals = []
+            self.f_interpolators = []
+            self.g_interpolators = []
+            self.render_interpolators()
+            self.render_subintervals()
+            self.canvas.delete("aline")
+            self.canvas.delete("bline")
+            self.canvas.delete("cline")
+            self.canvas.delete("dline")
 
     def calculate_function_area(self, raw_interpolators: list[tuple[int, int]], raw_subintervals: list[tuple[int, int]]):
         self.a_value_number = float(self.aValue.get())
@@ -440,6 +462,9 @@ class AreaBetweenCurvesInterface:
 
         # aniadimos B para completar el ultimo subintervalo
         subintervals.append(B)
+
+        # No hace falta ordenarlos, pero es por el toc
+        interpolators = sorted(interpolators, key=lambda x: x[0])
 
         # sumamos las areas de los intervalos
         area = 0
