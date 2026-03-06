@@ -12,7 +12,7 @@ source ./env/bin/activate
 # si usas fish
 # source ./env/bin/activate.fish
 
-python -m pip install numpy scipy
+python -m pip install numpy scipy pillow
 ```
 
 Para correr la interfaz la ejecutamos con
