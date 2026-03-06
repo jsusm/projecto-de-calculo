@@ -1,19 +1,61 @@
 # pyright: reportUnusedCallResult=false
 
 import tkinter as tk
-from tkinter import EW, NSEW, ttk
+from tkinter import EW, NSEW, StringVar, ttk
 from tkinter import filedialog
+from turtle import mode
+from typing import Literal
 from PIL import ImageFile, Image, ImageTk
+
+type Mode = Literal[
+        "selectA",
+        "selectB",
+        "selectC",
+        "selectD",
+        "SubintervalF",
+        "SubintervalG",
+        "selectFNodes",
+        "selectGNodes",
+        "None"
+        ]
 
 class AreaBetweenCurvesInterface:
     def __init__(self, root: tk.Tk):
         self.root: tk.Tk = root
         self.root.title("Area Entre curvas")
 
-        self.layoutInterface()
+        self.mode: Mode = "None"
+
+        ## Valores visuales de el intervalo con respecto a la imagen
+        self.a_position: float = 0
+        self.b_position: float = 0
+        self.c_position: float = 0
+        self.d_position: float = 0
+
+        ## Valores de estado para la seleccion visual de los intervalos
+        self.a_selected: float = 0
+        self.b_selected: float = 0
+        self.c_selected: float = 0
+        self.d_selected: float = 0
+
+        ## Valores de los entry de los intervalos en numeros
+        self.a_value_number: float = 0
+        self.b_value_number: float = 0
+        self.c_value_number: float = 0
+        self.d_value_number: float = 0
+
+        self.mouse_x: int = 0
+        self.mouse_y: int = 0
+        self.mouse_in: bool = False
+
+        self.layout_interface()
         pass
 
-    def layoutInterface(self):
+    def setMode(self, mode: Mode):
+        self.mode = mode
+        self.mode_indicator.configure(text=f"Mode: {mode}")
+
+    def layout_interface(self):
         # Para adaptar al cambio de tamanio
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -29,13 +71,17 @@ class AreaBetweenCurvesInterface:
         self.control_pane: ttk.Frame = ttk.Frame(self.main_container, relief="raised", padding=(10, 10))
         self.control_pane.grid(column=0, row=0, sticky=NSEW)
 
+        # Indicador de modo
+        self.mode_indicator: ttk.Label = ttk.Label(self.control_pane, text="Mode: Normal", padding=(0, 4))
+        self.mode_indicator.grid(column=0, row=0, sticky=EW)
+
         # Imagen
         self.add_image_button: ttk.Button = ttk.Button(self.control_pane, text="Add Image", command=self.load_image)
-        self.add_image_button.grid(column=0, row=0, sticky=EW)
+        self.add_image_button.grid(column=0, row=1, sticky=EW)
 
         # Intervalos
         self.intervalFrame: ttk.Frame = ttk.Frame(self.control_pane, padding=(0, 10))
-        self.intervalFrame.grid(column=0, row=1, sticky=EW)
+        self.intervalFrame.grid(column=0, row=2, sticky=EW)
 
         self.intervalLabel: ttk.Label = ttk.Label(self.intervalFrame, text="Intevalos", justify="left", padding=(0, 4))
         self.intervalLabel.grid(column=0, row=0, columnspan=3, sticky=EW)
@@ -45,18 +91,18 @@ class AreaBetweenCurvesInterface:
         self.aValue: tk.StringVar = tk.StringVar()
         self.aValueLable: ttk.Label = ttk.Label(self.intervalFrame, text="a: ", padding=2)
         self.aValueLable.grid(column=0, row=1)
-        self.aEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4)
+        self.aEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4, textvariable=self.aValue)
         self.aEntry.grid(column=1, row=1)
-        self.aAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar a")
+        self.aAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar a", command=lambda: self.setMode("selectA"))
         self.aAdjustVisuallyButton.grid(column=2, row=1)
 
         # (b)
         self.bValue: tk.StringVar = tk.StringVar()
         self.bValueLable: ttk.Label = ttk.Label(self.intervalFrame, text="b: ", padding=2)
         self.bValueLable.grid(column=0, row=2)
-        self.bEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4)
+        self.bEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4, textvariable=self.bValue)
         self.bEntry.grid(column=1, row=2)
-        self.bAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar b")
+        self.bAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar b", command=lambda: self.setMode("selectB"))
         self.bAdjustVisuallyButton.grid(column=2, row=2)
 
         ## Intervalo [c,d]
@@ -64,9 +110,9 @@ class AreaBetweenCurvesInterface:
         self.cValue: tk.StringVar = tk.StringVar()
         self.cValueLable: ttk.Label = ttk.Label(self.intervalFrame, text="c: ", padding=2)
         self.cValueLable.grid(column=0, row=3)
-        self.cEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4)
+        self.cEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4, textvariable=self.cValue)
         self.cEntry.grid(column=1, row=3)
-        self.cAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar c")
+        self.cAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar c", command=lambda: self.setMode("selectC"))
         self.cAdjustVisuallyButton.grid(column=2, row=3)
 
 
@@ -74,42 +120,156 @@ class AreaBetweenCurvesInterface:
         self.dValue: tk.StringVar = tk.StringVar()
         self.dValueLable: ttk.Label = ttk.Label(self.intervalFrame, text="d: ", padding=2)
         self.dValueLable.grid(column=0, row=4)
-        self.dEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4)
+        self.dEntry: ttk.Entry = ttk.Entry(self.intervalFrame, width=4, textvariable=self.dValue)
         self.dEntry.grid(column=1, row=4)
-        self.dAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar d")
+        self.dAdjustVisuallyButton: ttk.Button = ttk.Button(self.intervalFrame, text="Ajustar d", command=lambda: self.setMode("selectD"))
         self.dAdjustVisuallyButton.grid(column=2, row=4)
 
 
         ## Herramientas
         self.toolsFrame: ttk.Frame = ttk.Frame(self.control_pane, padding=(0, 10))
-        self.toolsFrame.grid(column=0, row=2, sticky=EW)
+        self.toolsFrame.grid(column=0, row=3, sticky=EW)
 
         self.toolsLabel: ttk.Label = ttk.Label(self.toolsFrame, text="Herramientas", justify="left")
         self.toolsLabel.grid(column=0, row=0, sticky=EW)
 
-        self.fNodetool: ttk.Button = ttk.Button(self.toolsFrame, text="Seleccionar nodos para f")
-        self.fNodetool.grid(column=0, row=1, pady=2)
+        self.fSubmiterval : ttk.Button = ttk.Button(self.toolsFrame, text="Subintervalos Para f", command=lambda: self.setMode("SubintervalF"))
+        self.fSubmiterval.grid(column=0, row=1, pady=2, sticky=EW)
 
-        self.gNodetool: ttk.Button = ttk.Button(self.toolsFrame, text="Seleccionar nodos para g")
-        self.gNodetool.grid(column=0, row=2, pady=2)
+        self.gSubmiterval : ttk.Button = ttk.Button(self.toolsFrame, text="Subintervalos Para g", command=lambda: self.setMode("SubintervalG"))
+        self.gSubmiterval.grid(column=0, row=2, pady=2, sticky=EW)
+
+        self.fNodetool: ttk.Button = ttk.Button(self.toolsFrame, text="Seleccionar nodos para f", command=lambda: self.setMode("selectFNodes"))
+        self.fNodetool.grid(column=0, row=3, pady=2)
+
+        self.gNodetool: ttk.Button = ttk.Button(self.toolsFrame, text="Seleccionar nodos para g", command=lambda: self.setMode("selectGNodes"))
+        self.gNodetool.grid(column=0, row=4, pady=2)
 
         # Calcular Area
 
         self.calculateAreaButton: ttk.Button = ttk.Button(self.control_pane, text="Calcular Area")
-        self.calculateAreaButton.grid(column=0, row=4, sticky=EW)
+        self.calculateAreaButton.grid(column=0, row=5, sticky=EW)
         self.resultLabel:ttk.Label = ttk.Label(self.control_pane, text="Area: ")
-        self.resultLabel.grid(column=0, row=5, sticky=EW)
+        self.resultLabel.grid(column=0, row=6, sticky=EW)
 
         ## Canvas
         self.canvas_frame:ttk.Frame = ttk.Frame(self.main_container)
         self.canvas_frame.grid(column=1, row=0, sticky=NSEW)
+
 
         self.canvas_frame.columnconfigure(0, weight=1)
         self.canvas_frame.rowconfigure(0, weight=1)
 
         self.canvas: tk.Canvas = tk.Canvas(self.canvas_frame, background='white')
         self.canvas.grid(column=0, row=0, sticky=NSEW)
+        ## Enlasar eventos con el canvas
+        self.canvas.bind("<Motion>", lambda e: self.mouse_move(e.x, e.y))
+        self.canvas.bind("<Enter>", lambda _: self.mouse_enter())
+        self.canvas.bind("<Leave>", lambda _: self.mouse_leave())
+        self.canvas.bind("<Button-1>", lambda e: self.mouse_left_click(e.x, e.y))
+        self.canvas.bind("<Button-3>", lambda e: self.mouse_right_click(e.x, e.y))
     pass
+
+    def mouse_enter(self):
+        self.mouse_in = True
+
+    def mouse_leave(self):
+        self.mouse_in = False
+        self.render_state()
+
+    def mouse_move(self, x: int, y: int):
+        self.mouse_x = x
+        self.mouse_y = y
+        self.render_state()
+        pass
+
+    def is_selecting_interval_boundary_mode(self):
+        return self.mode in ['selectA', 'selectB', 'selectC', 'selectD']
+
+    def mouse_left_click(self, x: int, y: int):
+        if(self.mouse_in):
+            vertical_line = False
+            bounday = self.boundary_from_mode()
+            if(self.mode == "selectA"):
+                self.a_selected = True
+                self.a_value_number = x
+
+            if(self.mode == "selectB"):
+                self.b_selected = True
+                self.b_value_number = x
+
+            if(self.mode == "selectC"):
+                self.c_selected = True
+                self.c_value_number = y
+                vertical_line = True
+
+            if(self.mode == "selectD"):
+                self.d_selected = True
+                self.d_value_number = y
+                vertical_line = True
+
+            linetag = f"{bounday}line"
+            self.canvas.delete(linetag)
+            if(vertical_line):
+                self.canvas.create_line(0, self.mouse_y, self.canvas.winfo_width(), self.mouse_y, fill="#aaa", tags=(linetag), dash=(10, 4))
+                self.canvas.create_text(10, y, text=bounday, tags=(linetag))
+            else:
+                self.canvas.create_line(self.mouse_x, 0, self.mouse_x, self.canvas.winfo_height(), fill="#aaa", tags=(linetag), dash=(10, 4))
+                self.canvas.create_text(x, 10, text=bounday, tags=(linetag))
+
+        pass
+
+    def boundary_from_mode(self):
+        if(self.mode == "selectA"): return 'a'
+        if(self.mode == "selectB"): return 'b'
+        if(self.mode == "selectC"): return 'c'
+        if(self.mode == "selectD"): return 'd'
+        return "-"
+
+    def mouse_right_click(self, x: int, y: int):
+        if(self.mouse_in):
+            if(self.mode == "selectA"): self.a_selected = False
+            if(self.mode == "selectB"): self.b_selected = False
+            if(self.mode == "selectC"): self.c_selected = False
+            if(self.mode == "selectD"): self.d_selected = False
+        self.render_state()
+        pass
+
+    def render_state(self):
+        ## Si ya esta selecionada la barrera del intervalo no hace falta redibujar la linea
+        draw_line = False
+        if(self.mode == "selectA"):
+            draw_line = not self.a_selected
+        if(self.mode == "selectB"):
+            draw_line = not self.b_selected
+        if(self.mode == "selectC"):
+            draw_line = not self.c_selected
+        if(self.mode == "selectD"):
+            draw_line = not self.d_selected
+
+        if(self.is_selecting_interval_boundary_mode() and self.mouse_in):
+            vertical_line = False
+            bounday = self.boundary_from_mode()
+
+            if(self.mode == "selectC"):
+                vertical_line = True
+            if(self.mode == "selectD"):
+                vertical_line = True
+
+            linetag = f"{bounday}line"
+            if(draw_line):
+                self.canvas.delete(linetag)
+                if(vertical_line):
+                    self.canvas.create_line(0, self.mouse_y, self.canvas.winfo_width(), self.mouse_y, fill="red", tags=(linetag))
+                else:
+                    self.canvas.create_line(self.mouse_x, 0, self.mouse_x, self.canvas.winfo_height(), fill="red", tags=(linetag))
+
+        # Borrar las lineas cuando el mouse deja el canvas
+        elif(self.is_selecting_interval_boundary_mode() and not self.mouse_in):
+            bounday = self.boundary_from_mode()
+            linetag = f"{bounday}line"
+            if(draw_line): self.canvas.delete(linetag)
+
 
     def load_image(self):
         file_path = filedialog.askopenfilename()
