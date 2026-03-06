@@ -7,7 +7,7 @@ def calculate_area(interpolators: list[tuple[float, float]], a: float, b: float)
     n = len(interpolators)
 
     # Debemos integrar la base de los polinomios en este caso la base canonica
-    # para construir el b del sistema de ecuaciones Aw = k
+    # para construir el k del sistema de ecuaciones Aw = k
     k = np.empty(n)
     for i in range(n):
         # calculamos la integral desde 'a' hasta 'b' de x^i
