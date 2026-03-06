@@ -173,12 +173,12 @@ class AreaBetweenCurvesInterface:
         self.canvas.bind("<Button-3>", lambda e: self.mouse_right_click(e.x, e.y))
     pass
 
-    def create_subinterval_line(self, x:int, y:int, tag: str, dashed: bool = False):
-            self.canvas.create_oval(x - 4, y - 4,x + 4, y + 4, fill="blue", tags=(tag))
-            if(dashed):
-                self.canvas.create_line(x, 0, x, self.canvas.winfo_height(), fill="blue", tags=(tag), dash=(10,4))
-            else:
-                self.canvas.create_line(x, 0, x, self.canvas.winfo_height(), fill="blue", tags=(tag))
+    def create_subinterval_line(self, x:int, y:int, tag: str, dashed: bool = False, color: str = "blue"):
+        self.canvas.create_oval(x - 4, y - 4,x + 4, y + 4, fill=color, tags=(tag))
+        if(dashed):
+            self.canvas.create_line(x, 0, x, self.canvas.winfo_height(), fill=color, tags=(tag), dash=(10,4))
+        else:
+            self.canvas.create_line(x, 0, x, self.canvas.winfo_height(), fill=color, tags=(tag))
 
 
     def boundary_from_mode(self):
@@ -188,11 +188,16 @@ class AreaBetweenCurvesInterface:
         if(self.mode == "selectD"): return 'd'
         return "-"
 
-    def render_f_subinterval(self):
+    def render_subintervals(self):
+        ## render f subintervals
         self.canvas.delete("f_subintervals")
         for x, y in self.f_subintervals:
             self.create_subinterval_line(x, y,"f_subintervals",  True)
 
+        ## render g subintervals
+        self.canvas.delete("g_subintervals")
+        for x, y in self.g_subintervals:
+            self.create_subinterval_line(x, y,"g_subintervals",  True, color="green")
 
     def mouse_enter(self):
         self.mouse_in = True
@@ -249,7 +254,15 @@ class AreaBetweenCurvesInterface:
             self.f_subintervals.append((x, y))
 
             self.canvas.delete("f_subinterval") # quitar la linea dibujada para seleccionar
-            self.render_f_subinterval()
+            self.render_subintervals()
+
+        if(self.mode == "SubintervalG"):
+            if(len(self.g_subintervals) >= 3):
+                self.g_subintervals.pop(0)
+            self.g_subintervals.append((x, y))
+
+            self.canvas.delete("g_subinterval") # quitar la linea dibujada para seleccionar
+            self.render_subintervals()
         pass
 
 
@@ -267,7 +280,13 @@ class AreaBetweenCurvesInterface:
             if(len(self.f_subintervals)):
                 self.f_subintervals.pop()
 
-            self.render_f_subinterval()
+            self.render_subintervals()
+
+        if(self.mode == "SubintervalG"):
+            if(len(self.g_subintervals)):
+                self.g_subintervals.pop()
+
+            self.render_subintervals()
         pass
 
     def render_state(self):
@@ -310,6 +329,10 @@ class AreaBetweenCurvesInterface:
         if(self.mode == "SubintervalF" and not len(self.f_subintervals) > 3):
             self.canvas.delete("f_subinterval")
             self.create_subinterval_line(self.mouse_x, self.mouse_y, "f_subinterval")
+
+        if(self.mode == "SubintervalG" and not len(self.g_subintervals) > 3):
+            self.canvas.delete("g_subinterval")
+            self.create_subinterval_line(self.mouse_x, self.mouse_y, "g_subinterval", color="green")
 
     def load_image(self):
         file_path = filedialog.askopenfilename()
