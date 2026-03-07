@@ -17,7 +17,7 @@ python -m pip install numpy scipy pillow
 
 Para correr la interfaz la ejecutamos con
 ```bash
-python parte1.py
+python seccionPractica/parte1.py
 ```
 
 ## Manual de usuario (Como uso esta herramienta)
@@ -46,5 +46,25 @@ no necesariamente se deben realizar en ese ordem, pero ese flujo es el más intu
 Por ultimo seleccionamos el botón de `Calcular Area` para aproximar el area entre las dos curvas.
 El resultado se mostrará debajo del boton de `Calcular Area`
 
+# Parte 2
+## Como correr el programa
+Para correr la segunda parte ejecutamos
+```bash
+python seccionPractica/parte2.py
+```
+
+## Manual de usuario
+Al igual que la primera parte veras un panel en la izquierda con varios botones y un recuadro blanco a la derecha.
+El primer paso es cargar la imagen con el boton de `cargar imagen`.
+
+Luego posicionamos los interpolantes de la función f con el boton `seleccionar nodo para f` y haciendo click
+sobre la función en la imagen, lo realiza lo mismo con para la función g con el boton `seleccionar nodo para g`.
+
+Puedes remover el último punto con el click derecho, puedes quitar todos los nodos con el boton `limpiar nodos`.
+
+Para visualizar la aproximación de las funciones seleccionamos `Generar función`, puedes ocultar la imagen
+con el boton `Ocultar imagen` para visualizar mejor la aproximación.
+
+Para Terminar calculamos el área entre las curvas de nivel con el botton `Calcular Area`.
 
 
