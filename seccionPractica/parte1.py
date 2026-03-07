@@ -168,7 +168,7 @@ class AreaBetweenCurvesInterface:
         self.canvas_frame.columnconfigure(0, weight=1)
         self.canvas_frame.rowconfigure(0, weight=1)
 
-        self.canvas: tk.Canvas = tk.Canvas(self.canvas_frame, background='white')
+        self.canvas: tk.Canvas = tk.Canvas(self.canvas_frame, background='white', cursor="cross")
         self.canvas.grid(column=0, row=0, sticky=NSEW)
         ## Enlasar eventos con el canvas
         self.canvas.bind("<Motion>", lambda e: self.mouse_move(e.x, e.y))
@@ -469,7 +469,7 @@ class AreaBetweenCurvesInterface:
         area = 0
         for i in range(len(subintervals) - 1):
             subinterval_interpolators = [p for p in interpolators if p[0] >= subintervals[i] and p[0] <= subintervals[i+1]]
-            print("i:", subinterval_interpolators)
+            print(f"i_[{i}]: {subinterval_interpolators}")
 
             area += calculate_area(subinterval_interpolators, subintervals[i], subintervals[i+1])
 

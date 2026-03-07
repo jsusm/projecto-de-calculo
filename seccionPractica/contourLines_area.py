@@ -26,6 +26,7 @@ def build_splines(nodes: list[tuple[float, float]]):
 def area_green(Sx, Sy):
     def integrand(u):
         return 0.5 * (Sx(u) * Sy(u, 1) - Sy(u) * Sx(u, 1))
+    
     val, _ = integrate.quad(integrand, 0.0, 1.0, epsabs=1e-9, epsrel=1e-9)
     return float(val)
 
