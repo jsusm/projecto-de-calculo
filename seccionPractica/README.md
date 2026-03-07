@@ -47,6 +47,9 @@ Por ultimo seleccionamos el botón de `Calcular Area` para aproximar el area ent
 El resultado se mostrará debajo del boton de `Calcular Area`
 
 # Parte 2
+
+![Parte 1](imagenes/parte2-screenshot.png)
+
 ## Como correr el programa
 Para correr la segunda parte ejecutamos
 ```bash
